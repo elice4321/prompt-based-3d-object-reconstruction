@@ -1,8 +1,6 @@
 
 # Prompt-Based 3D Object Reconstruction from a Single Image
 
-# Prompt-Based 3D Object Reconstruction
-
 This project implements an end-to-end computer vision pipeline that transforms a single RGB image and a text prompt into an interactive 3D point cloud. By integrating state-of-the-art zero-shot models, the system can detect, segment, and reconstruct specific objects from a scene without requiring custom training data.
 
 ## 🚀 Features
