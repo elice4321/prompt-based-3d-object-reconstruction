@@ -155,21 +155,4 @@ python run.py --encoder vits --img-path ../test_images/room.png --outdir ../outp
 - [ZoeDepth](https://github.com/isl-org/ZoeDepth)
 - [Open3D](https://github.com/isl-org/Open3D)
 
----
 
-## Author
-
-**Nidhi Sharma**  
-IIT Guwahati
-
----
-
-## What's Next?
-
-If you need help with:
-- 📄 Shortening this for a one-page project README
-- 📝 Writing a paper-style abstract
-- 📊 Preparing result figures and captions
-- 📤 Final submission formatting
-
-Just let me know! 👍
