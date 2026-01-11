@@ -1,0 +1,31 @@
+# Core
+numpy
+opencv-python
+matplotlib
+scipy
+tqdm
+
+# PyTorch (install separately in Colab / CUDA systems)
+torch
+torchvision
+torchaudio
+
+# Object Detection
+ultralytics
+
+# Segment Anything
+segment-anything
+
+# Depth Estimation
+timm
+einops
+huggingface-hub
+
+# 3D & Visualization
+open3d
+plotly
+kaleido
+
+# Utilities
+pyyaml
+requests
