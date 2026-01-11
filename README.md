@@ -1,41 +1,175 @@
+# Zero-Shot RGB-D Point Cloud Generation from 2D Images
 
-# Prompt-Based 3D Object Reconstruction from a Single Image
+This project implements a **zero-shot, prompt-based pipeline** for generating object-level RGB-D point clouds from unlabeled 2D images. By combining recent foundation models for object detection, segmentation, and monocular depth estimation, the system reconstructs 3D geometry from a single RGB image **without any task-specific training**.
 
-This project implements an end-to-end computer vision pipeline that transforms a single RGB image and a text prompt into an interactive 3D point cloud. By integrating state-of-the-art zero-shot models, the system can detect, segment, and reconstruct specific objects from a scene without requiring custom training data.
+---
 
-## 🚀 Features
+## Project Overview
 
-- **Zero-Shot Object Detection:** Uses **YOLOv8-World** to detect objects based on natural language prompts (e.g., "chair", "cat", "car").
-- **High-Precision Segmentation:** Leverages the **Segment Anything Model (SAM)** to generate accurate pixel-level masks using the detection bounding box.
-- **Monocular Depth Estimation:** Utilizes **Depth Anything** to compute a high-fidelity depth map of the complete image.
-- **3D Visualization:** Back-projects the masked RGB-D data into 3D space and renders the result as an interactive point cloud using **Plotly**.
+The complete pipeline converts a **single RGB image** into a **3D point cloud** of a selected object using the following stages:
 
-## 🛠️ Pipeline Overview
+### 1. Zero-Shot Object Detection
+- Object detection is performed using **YOLO-World / YOLOv8**, which supports text-prompt-based detection
+- Enables detection of objects **without requiring predefined class labels or retraining**
 
-The system processes the input image in the following sequential steps:
+### 2. Prompt-Based Segmentation
+- The **Segment Anything Model (SAM)** is used to obtain precise pixel-level segmentation
+- The bounding box predicted by YOLO is used as a **prompt**, rather than cropping the image
+- Preserves **contextual information** and improves segmentation accuracy
 
-1.  **Input:** The user provides an image and a text prompt.
-2.  **Detection (YOLOv8-World):** The model performs zero-shot detection to find the bounding box of the object specified in the prompt.
-3.  **Segmentation (SAM):** The bounding box coordinates are passed as a prompt to SAM, which segments the object from the background.
-4.  **Depth Estimation (Depth Anything):** The model estimates a relative depth map for the entire image to capture the geometry.
-5.  **Reconstruction:** The segmentation mask is applied to the depth map and RGB image. The filtered data is back-projected into a 3D point cloud.
-6.  **Output:** The final 3D object is visualized interactively in the browser via Plotly.
+### 3. Depth Estimation
+Two depth estimation models are used:
+- **Depth-Anything-V2** as a strong zero-shot baseline
+- **ZoeDepth** (trained on NYU Depth V2) for refined metric depth estimation
+- Depth is always predicted on the **full image** to maintain camera geometry and avoid distortions
 
-## 🧰 Tech Stack
+### 4. 3D Point Cloud Generation
+- The segmented depth map is projected into 3D space using a **pinhole camera model**
+- RGB values are mapped to each 3D point
+- Produces an **object-only RGB-D point cloud**, saved in `.ply` format using **Open3D**
 
-- **Language:** Python
-- **Detection:** YOLOv8-World (Ultralytics)
-- **Segmentation:** Segment Anything Model (SAM)
-- **Depth Estimation:** Depth Anything
-- **Visualization:** Plotly
-- **Libraries:** PyTorch, OpenCV, NumPy, Torchvision
+---
 
-## 📋 Installation
+## Key Design Choices
+
+- ✅ **SAM is applied using the bounding box only** as a guidance prompt, not as a hard crop
+- ✅ **Depth estimation is performed on the entire image** to preserve camera symmetry
+- ✅ **Depth-Anything-V2** provides a general-purpose zero-shot baseline
+- ✅ **ZoeDepth** demonstrates how supervised metric depth improves reconstruction quality
+
+---
+
+## Repository Structure
+
+```
+3DCloudCreationProject/
+├── Depth-Anything-V2/
+│   ├── depth_anything_v2/
+│   ├── ZoeDepth/
+│   ├── checkpoints/
+│   └── run.py
+├── datasets/
+│   └── nyu_depth_v2/
+├── test_images/
+├── output/
+│   ├── depth maps (.png, .npy)
+│   ├── 3D point clouds (.ply)
+│   └── visualizations
+├── notebooks/
+│   ├── pipeline.ipynb
+│   └── depth_refinement.ipynb
+├── requirements.txt
+└── README.md
+```
+
+---
+
+## Models, Outputs & Checkpoints (Google Drive)
+
+Due to large file sizes, pretrained models, checkpoints, depth outputs, and generated 3D point clouds are stored separately in **Google Drive**.
+
+**📂 Google Drive Link:**  
+[https://drive.google.com/drive/folders/1RF1tMwIdm1KmmpnEy-YbA7-5bwQeyBWj?usp=sharing](https://drive.google.com/drive/folders/1RF1tMwIdm1KmmpnEy-YbA7-5bwQeyBWj?usp=sharing)
+
+**This folder contains:**
+- Depth-Anything-V2 pretrained checkpoints
+- ZoeDepth pretrained models
+- Output depth maps
+- Final 3D point clouds
+- Sample results
+
+---
+
+## Installation
+
+Install the required dependencies using:
 
 ```bash
-# Clone the repository
-git clone [https://github.com/your-username/your-repo-name.git](https://github.com/your-username/your-repo-name.git)
-cd your-repo-name
-
-# Install dependencies
 pip install -r requirements.txt
+```
+
+**Note:**  
+PyTorch with CUDA support should be installed separately depending on your system.  
+See: [https://pytorch.org/get-started/locally/](https://pytorch.org/get-started/locally/)
+
+---
+
+## Running the Pipeline
+
+### Depth Estimation (Depth-Anything-V2)
+
+```bash
+cd Depth-Anything-V2
+python run.py --encoder vits --img-path ../test_images/room.png --outdir ../output
+```
+
+### 3D Point Cloud Generation
+
+1. Detect the object using **YOLO**
+2. Segment the object using **SAM**
+3. Apply the segmentation mask to the depth map
+4. Project depth values to 3D using **Open3D**
+5. Save the resulting point cloud as a `.ply` file
+
+**The `.ply` file can be viewed using:**
+- MeshLab
+- CloudCompare
+- Blender
+
+**No Python environment is required to view the final results.**
+
+---
+
+## Results
+
+- ✅ The pipeline successfully generates **object-only RGB-D point clouds** from a single RGB image
+- ✅ **Depth-Anything-V2** provides a reliable zero-shot baseline
+- ✅ **ZoeDepth** significantly improves depth smoothness and geometric consistency for indoor scenes
+- ⚠️ Remaining artifacts are mainly due to monocular depth ambiguity and approximate camera intrinsics
+
+---
+
+## Limitations
+
+- Monocular depth estimation introduces noise near object boundaries
+- Camera intrinsics are approximated when metadata is unavailable
+- Metric accuracy varies across indoor and outdoor domains
+
+---
+
+## Future Work
+
+- Fine-tuning ZoeDepth on domain-specific datasets
+- Camera intrinsic estimation from metadata
+- Mesh reconstruction from point clouds
+- Multi-view consistency using video input
+- Synthetic dataset generation for underrepresented object categories
+
+---
+
+## Acknowledgements
+
+- [YOLO-World / YOLOv8](https://github.com/ultralytics/ultralytics)
+- [Segment Anything Model (SAM)](https://github.com/facebookresearch/segment-anything)
+- [Depth-Anything-V2](https://github.com/DepthAnything/Depth-Anything-V2)
+- [ZoeDepth](https://github.com/isl-org/ZoeDepth)
+- [Open3D](https://github.com/isl-org/Open3D)
+
+---
+
+## Author
+
+**Nidhi Sharma**  
+IIT Guwahati
+
+---
+
+## What's Next?
+
+If you need help with:
+- 📄 Shortening this for a one-page project README
+- 📝 Writing a paper-style abstract
+- 📊 Preparing result figures and captions
+- 📤 Final submission formatting
+
+Just let me know! 👍
